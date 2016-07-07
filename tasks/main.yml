@@ -1,0 +1,49 @@
+---
+- name: ssh_config | Debug ssh_config_hosts variables
+  debug:
+    msg: "{{ ssh_config_hosts }}"
+  when: ssh_config_debug is defined and ssh_config_debug == true and ssh_config_hosts is defined
+
+- name: ssh_config | Create ssh_config files directory
+  file: 
+    path: "{{ item }}"
+    owner: "{{ ssh_config_owner }}"
+    group: "{{ ssh_config_owner }}"
+    mode: "{{ ssh_config_fmode }}"
+    state: "directory"
+    recurse: yes
+  with_items:
+    - "{{ ssh_config_dir }}"
+    - "{{ ssh_config_dir }}/keys"
+
+- name: ssh_config | Create ssh_config hosts keys directory
+  file: 
+    path: "{{ ssh_config_dir }}/keys/{{ item.value.name }}"
+    owner: "{{ ssh_config_owner }}"
+    group: "{{ ssh_config_owner }}"
+    mode: "{{ ssh_config_fmode }}"
+    state: "directory"
+    recurse: yes
+  with_dict:
+    "{{ ssh_config_hosts }}"
+
+- name: ssh_config | Create ssh_config file
+  template: 
+    src: "opt/ssh_config/config.j2"
+    dest: "{{ ssh_config_file }}"
+    owner: "{{ ssh_config_owner }}"
+    group: "{{ ssh_config_owner }}"
+    mode: "{{ ssh_config_fmode }}"
+
+- name: ssh_config | Generate host keys
+  shell: >
+      ssh-keygen 
+      -t "{{ ssh_config_keytype }}"
+      -b "{{ ssh_config_keybit }}"
+      -C "{{ item.value.name }} Key"
+      -P "" 
+      -f "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa"
+      -q &>/dev/null
+  with_dict:
+    "{{ ssh_config_hosts }}"
+

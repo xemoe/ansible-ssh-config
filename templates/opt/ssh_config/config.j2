@@ -1,0 +1,18 @@
+{% if ssh_config_hosts is defined and ssh_config_hosts | length > 0 %}
+########################################
+#                                      #
+# Begin of SSH Host Configuration File #
+#                                      #
+########################################
+{% for hash_id in ssh_config_hosts %}
+{% if ssh_config_hosts[hash_id]["active"] %}
+{{ ssh_config_naming["name"] }} {{ ssh_config_hosts[hash_id]["name"] }}
+    {{ ssh_config_naming["hostname"] }} {{ ssh_config_hosts[hash_id]["hostname"] }}
+    {{ ssh_config_naming["port"] }} {{ ssh_config_hosts[hash_id]["port"] }}
+    {{ ssh_config_naming["username"] }} {{ ssh_config_hosts[hash_id]["username"] }}
+    {{ ssh_config_naming["identity"] }} {{ ssh_config_dir }}/keys/{{ ssh_config_hosts[hash_id]["name"] }}/{{ ssh_config_hosts[hash_id]["identity"] }}
+    StrictHostKeyChecking no
+    UserKnownHostsFile=/dev/null
+{% endif %}
+{% endfor %}
+{% endif %}
