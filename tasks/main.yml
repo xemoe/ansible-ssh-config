@@ -2,7 +2,10 @@
 - name: ssh_config | Debug ssh_config_hosts variables
   debug:
     msg: "{{ ssh_config_hosts }}"
-  when: ssh_config_debug is defined and ssh_config_debug == true and ssh_config_hosts is defined
+  when: >
+    ssh_config_debug is defined 
+    and ssh_config_debug == true 
+    and ssh_config_hosts is defined
 
 - name: ssh_config | Install base packages
   apt: 
@@ -45,25 +48,54 @@
 
 - name: ssh_config | Generate host keys
   shell: >
-      ssh-keygen 
-      -t "{{ ssh_config_keytype }}"
-      -b "{{ ssh_config_keybit }}"
-      -C "{{ item.value.name }} Key"
-      -P "" 
-      -f "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa"
-      -q &>/dev/null
+    ssh-keygen 
+    -t "{{ ssh_config_keytype }}"
+    -b "{{ ssh_config_keybit }}"
+    -C "{{ item.value.name }} Key"
+    -P "" 
+    -f "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa"
+    -q &>/dev/null
+  args:
+    creates: "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa"
   with_dict:
     "{{ ssh_config_hosts }}"
 
 - name: ssh_config | Update authorized_keys when given sshpass
   shell: >
-      sshpass 
-      -p "{{ item.value.sshpass }}" 
-      ssh-copy-id 
-      -o StrictHostKeyChecking=no
-      -i "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa" 
-      "{{ item.value.username }}@{{ item.value.hostname }}" &>/dev/null
+    sshpass 
+    -p "{{ item.value.sshpass }}" 
+    ssh-copy-id 
+    -o StrictHostKeyChecking=no
+    -i "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa" 
+    "{{ item.value.username }}@{{ item.value.hostname }}" &>/dev/null
   with_dict:
     "{{ ssh_config_hosts }}"
-  when: item.value.sshpass is defined and item.value.sshpass | length > 0
+  when: >
+    item.value.sshpass is defined 
+    and item.value.sshpass | length > 0
+
+- name: ssh_config | Execute - debug ssh connections
+  shell: >
+    timeout 5 
+    ssh 
+    -o StrictHostKeyChecking=no
+    -o PasswordAuthentication=no
+    -i "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa" 
+    -F "{{ ssh_config_file }}"
+    "{{ item.value.name }}" "whoami" 2>/dev/null
+  with_dict:
+    "{{ ssh_config_hosts }}"
+  when: >
+    ssh_config_debug is defined 
+    and ssh_config_debug == true 
+    and ssh_config_hosts is defined
+  register: ssh_connections_debug
+  ignore_errors: yes
+
+- name: ssh_config | Show - debug ssh connections
+  debug: 
+    msg: "{{ ssh_connections_debug }}"
+  when: >
+    ssh_config_debug is defined 
+    and ssh_config_debug == true
 
