@@ -4,6 +4,14 @@
     msg: "{{ ssh_config_hosts }}"
   when: ssh_config_debug is defined and ssh_config_debug == true and ssh_config_hosts is defined
 
+- name: ssh_config | Install base packages
+  apt: 
+    pkg: "{{ item }}"
+    state: present
+  with_items:
+    - openssh-client
+    - sshpass
+
 - name: ssh_config | Create ssh_config files directory
   file: 
     path: "{{ item }}"
@@ -46,4 +54,16 @@
       -q &>/dev/null
   with_dict:
     "{{ ssh_config_hosts }}"
+
+- name: ssh_config | Update authorized_keys when given sshpass
+  shell: >
+      sshpass 
+      -p "{{ item.value.sshpass }}" 
+      ssh-copy-id 
+      -o StrictHostKeyChecking=no
+      -i "{{ ssh_config_dir }}/keys/{{ item.value.name }}/id_rsa" 
+      "{{ item.value.username }}@{{ item.value.hostname }}" &>/dev/null
+  with_dict:
+    "{{ ssh_config_hosts }}"
+  when: item.value.sshpass is defined and item.value.sshpass | length > 0
 
