@@ -14,9 +14,10 @@ ssh_config_naming:
   identity: IdentityFile
 
 ssh_config_hosts:
-  - name: mainbox
+  mainbox: 
+    name: mainbox
     hostname: 172.100.0.200
     username: vagrant
     port: 22
     identity: id_rsa
-    active: true
+    active: false
