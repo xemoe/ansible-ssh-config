@@ -1,0 +1,9 @@
+---
+- name: testing::ssh_config
+  hosts: mainbox
+  become: yes
+  vars_files:
+    - ssh_config.yml
+  roles:
+    - role: xemoe.ssh_config
+
